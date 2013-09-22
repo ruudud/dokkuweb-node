@@ -1,8 +1,11 @@
+export NODE_ENV:=test
 test:
-	@./node_modules/.bin/mocha 
+	@appdir=./test/fixtures/appdir \
+	./node_modules/.bin/mocha 
 
 watch:
-	@./node_modules/.bin/mocha -w
+	@appdir=./test/fixtures/appdir \
+	./node_modules/.bin/mocha -C -R min -w
  
 .PHONY: test watch
 

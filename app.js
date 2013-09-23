@@ -7,7 +7,8 @@ nconf.argv()
 nconf.env()
 nconf.defaults({
   port: 5000,
-  appdir: '/tmp/apps'
+  appdir: '/tmp/apps',
+  gitref: '.git/refs/heads/master'
 });
 
 var app = module.exports = express();
@@ -38,8 +39,15 @@ app.get('/apps', function (req, res) {
     var apps = files.map(function (file) {
       return { name: file, path: path.join(appdir, file) };
     })
-    .filter(function (file) {
-      return file.name !== 'ssl' && fs.statSync(file.path).isDirectory();
+    .filter(function (app) {
+      return app.name !== 'ssl' && fs.statSync(app.path).isDirectory();
+    })
+    .map(function (app) {
+      var commitId = fs.readFileSync(path.join(app.path, nconf.get('gitref')), {
+        encoding: 'ascii'
+      });
+      app.gitref = commitId;
+      return app;
     });
 
     res.send(apps);
@@ -50,6 +58,7 @@ app.get('/', function (req, res) {
   res.send(204);
 });
 
+// Generic error handler
 app.use(function(err, req, res, next){
   console.error(err.stack);
   res.send(500, 'Internal Server Error');

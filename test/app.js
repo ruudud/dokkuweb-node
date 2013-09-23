@@ -47,6 +47,20 @@ describe('Dokkuweb', function () {
           done();
         });
     });
+
+    it('displays git ref for master ref', function (done) {
+      request(baseUrl)
+        .get('/apps')
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) throw err;
+
+          res.body[0].should.have.property('gitref', 'c0ffee');
+          done();
+        });
+    });
   });
 
   describe('Root resource', function () {

@@ -44,7 +44,7 @@ app.get('/apps', function (req, res) {
     })
     .map(function (app) {
       var commitId = fs.readFileSync(path.join(app.path, nconf.get('gitref')), {
-        encoding: 'ascii'
+        encoding: 'utf8'
       });
       app.gitref = commitId;
       return app;

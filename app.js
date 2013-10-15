@@ -15,7 +15,7 @@ app.configure('test', function () {
   nconf.defaults({
     appdir: './test/fixtures/appdir',
     gitref: 'gitdir/refs/heads/master',
-    addSshKeyCmd: './test/fancyecho.sh',
+    sshKeyCmd: './test/utils/fancyecho.sh',
   });
 });
 
@@ -26,7 +26,7 @@ app.configure('production', function () {
     port: 5000,
     appdir: '/home/git',
     gitref: '.git/refs/heads/master',
-    addSshKeyCmd: 'gitreceive',
+    sshKeyCmd: 'gitreceive',
   });
 });
 
@@ -56,10 +56,32 @@ app.use(function (req, res, next) {
   next();
 });
 
+app.get('/users/:username/keys', function (req, res) {
+  var user = req.params.username;
+  var child = spawn(nconf.get('sshKeyCmd'), ['get-keys', user]);
+  child.stdout.on('data', function (data) {
+    var fingerprintStr = '' + data;
+    var fingerprints = fingerprintStr.split('\n');
+    // Lets remove the last element if it's empty
+    if (fingerprints[fingerprints.length - 1] === '') {
+      fingerprints.pop(); 
+    }
+    res.send(fingerprints);
+  });
+  child.on('error', function () {
+    res.send(500, { error: 'Error when listing keys' });
+  });
+  child.on('exit', function (exitCode) {
+    if (exitCode > 0) {
+      res.send(500, { error: 'Error when listing keys' });
+    }
+  });
+});
+
 app.post('/users/:username/keys', function (req, res) {
   var user = req.params.username;
   var key = req.body.pubkey;
-  var child = spawn(nconf.get('addSshKeyCmd'), ['upload-key', user]);
+  var child = spawn(nconf.get('sshKeyCmd'), ['upload-key', user]);
   child.on('error', function () {
     res.send(500, { error: 'Error when adding key' });
   });
@@ -70,6 +92,7 @@ app.post('/users/:username/keys', function (req, res) {
     res.redirect('/users/' + user);
   });
   child.stdin.setEncoding('utf-8');
+  // dokku needs the key provded on its STDIN
   child.stdin.write(key);
   child.stdin.end();
 });

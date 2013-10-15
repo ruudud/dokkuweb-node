@@ -62,6 +62,23 @@ describe('Dokkuweb', function () {
           .expect(204, done);
       });
 
+      it('list SSH keys for user', function (done) {
+        request(baseUrl)
+          .get('/users/murdoc/keys')
+          .set('X-Forwarded-User', 'murdoc')
+          .expect(200)
+          .end(function (err, res) {
+            if (err) throw err;
+
+            res.body.should
+              .have.lengthOf(1);
+            res.body[0].should
+              .equal('2a:3b:be:07:16:b6:05:f7:d2:28:28:72:f2:48:5c:1a');
+                                  
+            done();
+          });
+      });
+
       it('can receive new SSH keys', function (done) {
         var newKey = {
           pubkey: "ssh-rsa 23456789abc murdoc@macG"
